@@ -1,6 +1,7 @@
 """
 This file defines the core research contribution   
 """
+
 import os
 import torch
 from torch.nn import functional as F
@@ -11,16 +12,21 @@ from argparse import ArgumentParser
 
 import pytorch_lightning as pl
 
-class CoolSystem(pl.LightningModule):
+class Model(pl.LightningModule):
 
     def __init__(self, hparams):
-        super(CoolSystem, self).__init__()
+        super(Model, self).__init__()
         # not the best model...
         self.hparams = hparams
-        self.l1 = torch.nn.Linear(28 * 28, 10)
+        self.l1 = torch.nn.Linear(28 * 28, 256)
+        self.l2 = torch.nn.Linear(256, 256)
+        self.l3 = torch.nn.Linear(256, 10)
 
     def forward(self, x):
-        return torch.relu(self.l1(x.view(x.size(0), -1)))
+        x = torch.relu(self.l1(x.view(x.size(0), -1)))
+        x = torch.relu(self.l2(x))
+        x = torch.relu(self.l3(x))
+        return x
 
     def training_step(self, batch, batch_idx):
         # REQUIRED
@@ -61,19 +67,23 @@ class CoolSystem(pl.LightningModule):
     def configure_optimizers(self):
         # REQUIRED
         # can return multiple optimizers and learning_rate schedulers
-        return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+        return optimizer
 
     def train_dataloader(self):
         # REQUIRED
-        return DataLoader(MNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor()), batch_size=self.hparams.batch_size)
+        return DataLoader(MNIST(self.hparams.data_dir, train=True, download=True, \
+            transform=transforms.ToTensor()), batch_size=self.hparams.batch_size)
 
     def val_dataloader(self):
         # OPTIONAL
-        return DataLoader(MNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor()), batch_size=self.hparams.batch_size)
+        return DataLoader(MNIST(self.hparams.data_dir, train=True, download=True, \
+                transform=transforms.ToTensor()), batch_size=self.hparams.batch_size)
 
     def test_dataloader(self):
         # OPTIONAL
-        return DataLoader(MNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor()), batch_size=self.hparams.batch_size)
+        return DataLoader(MNIST(self.hparams.data_dir, train=True, download=True, \
+                transform=transforms.ToTensor()), batch_size=self.hparams.batch_size)
 
     @staticmethod
     def add_model_specific_args(parent_parser):
@@ -82,11 +92,11 @@ class CoolSystem(pl.LightningModule):
         """
         # MODEL specific
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
-        parser.add_argument('--learning_rate', default=0.02, type=float)
+        parser.add_argument('--learning_rate', default=0.01, type=float)
         parser.add_argument('--batch_size', default=32, type=int)
+        parser.add_argument('--data_dir', default="./data", type=str)
 
         # training specific (for this model)
         # parser.add_argument('--max_nb_epochs', default=2, type=int)
 
         return parser
-
