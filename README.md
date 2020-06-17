@@ -1,8 +1,13 @@
 # pl-test
 
+## Prepare
+
 ```bash
+pip install -r requirements.txt
 ln -s /Source/Data data
 ```
+
+## Fit
 
 ```bash
 # CPU   
