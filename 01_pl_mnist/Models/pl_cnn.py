@@ -4,6 +4,7 @@ This file defines the core research contribution
 
 import os
 import torch
+import torch.nn as nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
@@ -16,17 +17,28 @@ class Model(pl.LightningModule):
 
     def __init__(self, hparams):
         super(Model, self).__init__()
-        # not the best model...
         self.hparams = hparams
-        self.l1 = torch.nn.Linear(28 * 28, 256)
-        self.l2 = torch.nn.Linear(256, 256)
-        self.l3 = torch.nn.Linear(256, 10)
+        self.conv1 = nn.Conv2d(1, 32, 3, 1)
+        self.conv2 = nn.Conv2d(32, 64, 3, 1)
+        self.dropout1 = nn.Dropout2d(0.25)
+        self.dropout2 = nn.Dropout2d(0.5)
+        self.fc1 = nn.Linear(9216, 128)
+        self.fc2 = nn.Linear(128, 10)
 
     def forward(self, x):
-        x = torch.relu(self.l1(x.view(x.size(0), -1)))
-        x = torch.relu(self.l2(x))
-        x = torch.relu(self.l3(x))
-        return x
+        x = self.conv1(x)
+        x = F.relu(x)
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout1(x)
+        x = torch.flatten(x, 1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.dropout2(x)
+        x = self.fc2(x)
+        output = F.log_softmax(x, dim=1)
+        return output
 
     def training_step(self, batch, batch_idx):
         # REQUIRED
@@ -67,6 +79,7 @@ class Model(pl.LightningModule):
     def configure_optimizers(self):
         # REQUIRED
         # can return multiple optimizers and learning_rate schedulers
+        # optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
         return optimizer
 

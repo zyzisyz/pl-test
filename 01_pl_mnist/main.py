@@ -5,7 +5,8 @@ This file runs the main training/val loop, etc... using Lightning Trainer
 # from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning import Trainer 
 from argparse import ArgumentParser
-from Models.pl_linear import Model
+from Models.pl_cnn import Model
+# from Models.pl_linear import Model
 
 # sets seeds for numpy, torch, etc...
 # must do for DDP to work well
@@ -21,6 +22,7 @@ if __name__ == '__main__':
 
     # parse params
     args = parser.parse_args()
+    input(args.learning_rate)
     model = Model(hparams=args)
 
     # most basic trainer, uses good defaults
