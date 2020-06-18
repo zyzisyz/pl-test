@@ -8,8 +8,9 @@ import torch.nn as nn
 from torch import optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
-from torchvision.datasets import MNIST
 import torchvision.transforms as transforms
+from torchvision.datasets import FashionMNIST as MNIST
+#from torchvision.datasets import MNIST
 
 from collections import OrderedDict
 from argparse import ArgumentParser
@@ -21,19 +22,20 @@ class Model(pl.LightningModule):
 
     def __init__(self, hparams):
         super(Model, self).__init__()
-        # not the best model...
         self.hparams = hparams
 
         # build nnet
-        self.l1 = torch.nn.Linear(28 * 28, 256)
-        self.l2 = torch.nn.Linear(256, 256)
-        self.l3 = torch.nn.Linear(256, 10)
+        self.l1 = nn.Linear(28*28, 256)
+        self.l2 = nn.Linear(256, 256)
+        self.l3 = nn.Linear(256, 10)
 
     def forward(self, x):
-        x = torch.relu(self.l1(x.view(x.size(0), -1)))
-        x = torch.relu(self.l2(x))
-        x = torch.relu(self.l3(x))
-        return x
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.l1(x))
+        x = F.relu(self.l2(x))
+        x = self.l3(x)
+        output = F.log_softmax(x, dim=1)
+        return output
 
     def loss(self, labels, logits):
         nll = F.nll_loss(logits, labels)
@@ -162,23 +164,32 @@ class Model(pl.LightningModule):
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
         return [optimizer], [scheduler]
 
+    @pl.data_loader
     def train_dataloader(self):
         # REQUIRED
+        kwargs = {'num_workers': 7, 'pin_memory': True}
         log.info('Training data loader called.')
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
         return DataLoader(MNIST(self.hparams.data_dir, train=True, download=True, \
-            transform=transforms.ToTensor()), batch_size=self.hparams.batch_size)
+                transform=transform), batch_size=self.hparams.batch_size, **kwargs)
 
+    @pl.data_loader
     def val_dataloader(self):
         # OPTIONAL
+        kwargs = {'num_workers': 7, 'pin_memory': True}
         log.info('Validation data loader called.')
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
         return DataLoader(MNIST(self.hparams.data_dir, train=False, download=True, \
-                transform=transforms.ToTensor()), batch_size=self.hparams.batch_size)
+                transform=transform), batch_size=self.hparams.batch_size, **kwargs)
 
+    @pl.data_loader
     def test_dataloader(self):
         # OPTIONAL
         log.info('Test data loader called.')
+        kwargs = {'num_workers': 7, 'pin_memory': True}
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
         return DataLoader(MNIST(self.hparams.data_dir, train=False, download=True, \
-                transform=transforms.ToTensor()), batch_size=self.hparams.batch_size)
+                transform=transform), batch_size=self.hparams.batch_size, **kwargs)
 
     @staticmethod
     def add_model_specific_args(parent_parser):

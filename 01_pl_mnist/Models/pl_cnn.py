@@ -9,8 +9,8 @@ from torch import optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
-#from torchvision.datasets import FashionMNIST as MNIST
-from torchvision.datasets import MNIST
+from torchvision.datasets import FashionMNIST as MNIST
+#from torchvision.datasets import MNIST
 
 from collections import OrderedDict
 from argparse import ArgumentParser
@@ -174,23 +174,32 @@ class Model(pl.LightningModule):
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
         return [optimizer], [scheduler]
 
+    @pl.data_loader
     def train_dataloader(self):
         # REQUIRED
+        kwargs = {'num_workers': 7, 'pin_memory': True}
         log.info('Training data loader called.')
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
         return DataLoader(MNIST(self.hparams.data_dir, train=True, download=True, \
-            transform=transforms.ToTensor()), batch_size=self.hparams.batch_size)
+                transform=transform), batch_size=self.hparams.batch_size, **kwargs)
 
+    @pl.data_loader
     def val_dataloader(self):
         # OPTIONAL
+        kwargs = {'num_workers': 7, 'pin_memory': True}
         log.info('Validation data loader called.')
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
         return DataLoader(MNIST(self.hparams.data_dir, train=False, download=True, \
-                transform=transforms.ToTensor()), batch_size=self.hparams.batch_size)
+                transform=transform), batch_size=self.hparams.batch_size, **kwargs)
 
+    @pl.data_loader
     def test_dataloader(self):
         # OPTIONAL
         log.info('Test data loader called.')
+        kwargs = {'num_workers': 7, 'pin_memory': True}
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
         return DataLoader(MNIST(self.hparams.data_dir, train=False, download=True, \
-                transform=transforms.ToTensor()), batch_size=self.hparams.batch_size)
+                transform=transform), batch_size=self.hparams.batch_size, **kwargs)
 
     @staticmethod
     def add_model_specific_args(parent_parser):

@@ -12,8 +12,9 @@ data_dir="./data"
 ## fit    
 ############
 python main.py \
-	--gpus "0,1" \
+	--gpus 1 \
 	--data_dir $data_dir \
 	--learning_rate 0.01 \
-	--max_epochs 10
-
+	--max_epochs 2 \
+	--batch_size 1000
+    #--distributed_backend "dp" \
