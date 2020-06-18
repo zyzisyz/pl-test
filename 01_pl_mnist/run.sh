@@ -15,3 +15,5 @@ python main.py \
 	--gpus "0,1" \
 	--data_dir $data_dir \
 	--learning_rate 0.01 \
+	--max_epochs 10
+
