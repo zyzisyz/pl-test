@@ -22,7 +22,6 @@ if __name__ == '__main__':
 
     # parse params
     args = parser.parse_args()
-    input(args.learning_rate)
     model = Model(hparams=args)
 
     # most basic trainer, uses good defaults
