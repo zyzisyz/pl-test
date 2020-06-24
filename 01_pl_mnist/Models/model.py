@@ -1,19 +1,15 @@
-"""
-This file defines the core research contribution   
-"""
-
 import os
 import torch
 import torch.nn as nn
 from torch import optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
-from torchvision.datasets import FashionMNIST as MNIST
-#from torchvision.datasets import MNIST
 
 from collections import OrderedDict
 from argparse import ArgumentParser
+
+from .nnet import CNN, Linear
+from .dataset import get_train_data, get_test_data
 
 import pytorch_lightning as pl
 from pytorch_lightning import _logger as log
@@ -25,17 +21,14 @@ class Model(pl.LightningModule):
         self.hparams = hparams
 
         # build nnet
-        self.l1 = nn.Linear(28*28, 256)
-        self.l2 = nn.Linear(256, 256)
-        self.l3 = nn.Linear(256, 10)
+        self.nnet = CNN(self.hparams)
+
+        # dataset
+        self.train_data = get_train_data(self.hparams.data_dir)
+        self.test_data = get_test_data(self.hparams.data_dir)
 
     def forward(self, x):
-        x = x.view(x.size(0), -1)
-        x = F.relu(self.l1(x))
-        x = F.relu(self.l2(x))
-        x = self.l3(x)
-        output = F.log_softmax(x, dim=1)
-        return output
+        return self.nnet(x)
 
     def loss(self, labels, logits):
         nll = F.nll_loss(logits, labels)
@@ -169,38 +162,19 @@ class Model(pl.LightningModule):
         # REQUIRED
         kwargs = {'num_workers': 7, 'pin_memory': True}
         log.info('Training data loader called.')
-        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
-        return DataLoader(MNIST(self.hparams.data_dir, train=True, download=True, \
-                transform=transform), batch_size=self.hparams.batch_size, **kwargs)
+        return DataLoader(self.train_data, batch_size=self.hparams.batch_size, **kwargs)
 
     @pl.data_loader
     def val_dataloader(self):
         # OPTIONAL
         kwargs = {'num_workers': 7, 'pin_memory': True}
         log.info('Validation data loader called.')
-        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
-        return DataLoader(MNIST(self.hparams.data_dir, train=False, download=True, \
-                transform=transform), batch_size=self.hparams.batch_size, **kwargs)
+        return DataLoader(self.test_data, batch_size=self.hparams.batch_size, **kwargs)
 
     @pl.data_loader
     def test_dataloader(self):
         # OPTIONAL
         log.info('Test data loader called.')
         kwargs = {'num_workers': 7, 'pin_memory': True}
-        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
-        return DataLoader(MNIST(self.hparams.data_dir, train=False, download=True, \
-                transform=transform), batch_size=self.hparams.batch_size, **kwargs)
-
-    @staticmethod
-    def add_model_specific_args(parent_parser):
-        """
-        Specify the hyperparams for this LightningModule
-        """
-        # MODEL specific
-        parser = ArgumentParser(parents=[parent_parser], add_help=False)
-        parser.add_argument('--learning_rate', default=0.01, type=float)
-        parser.add_argument('--batch_size', default=400, type=int)
-        parser.add_argument('--data_dir', default="./data", type=str)
-
-        return parser
+        return DataLoader(self.test_data, batch_size=self.hparams.batch_size, **kwargs)
 
