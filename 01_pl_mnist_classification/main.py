@@ -17,11 +17,10 @@ import torchvision.transforms as transforms
 
 if __name__ == '__main__':
     # add args from trainer
-    # give the module a chance to add own params
-    # good practice to define LightningModule speficic params in the module
     parser = ArgumentParser(add_help=False)
     parser = Trainer.add_argparse_args(parser)
-    parser = add_model_specific_args(parser) # StaticMethod
+    # give the module a chance to add own params
+    parser = add_model_specific_args(parser) 
 
     # parse params
     args = parser.parse_args()
