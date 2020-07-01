@@ -7,7 +7,7 @@ from pytorch_lightning import Trainer
 from argparse import ArgumentParser
 from pytorch_lightning import LightningModule
 import torch
-from Models import Model, add_model_specific_args
+from lib import Model, add_model_specific_args
 from torchvision.datasets import FashionMNIST as MNIST
 import torchvision.transforms as transforms
 
